@@ -28,15 +28,17 @@ class HMCSampler(object):
             if param.grad is not None:
                 param.grad.data.zero_()
 
-    def data_pass(self,closure):
+    def data_pass(self,closure_gen):
         p_list = self.p_list
         self.zero_grad()
-        loss = closure()
-        loss.backward()
+        loss = 0
+        for closure in closure_gen():
+            loss += closure()
+            loss.backward()
         g_list = list(map((lambda x: x.grad.data),p_list))
         return g_list,loss
 
-    def step(self,closure):
+    def step(self,closure_gen):
         #TODO: add MC rejection
         self.resample_r()
         p_list = [x.data for x in self.p_list]
@@ -46,13 +48,13 @@ class HMCSampler(object):
         epsilon = self.epsilon
         for i in range(self.n):
             #TODO: Clean up implementation with getter and setters
-            g_list,_ = self.data_pass(closure)
+            g_list,_ = self.data_pass(closure_gen)
             r_list = list(map(lambda x,y: x-y*epsilon/2,r_list,g_list))
 
             p_list = list(map(lambda x,y: x+y*epsilon,p_list,r_list))
             list(map(assign,self.p_list,p_list))
 
-            g_list,loss = self.data_pass(closure)
+            g_list,loss = self.data_pass(closure_gen)
             r_list = list(map(lambda x,y: x-y*epsilon/2,r_list,g_list))
 
 
