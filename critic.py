@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from bayestorch.models import Linear
+from bayestorch.hmc import ParameterGroup
 
 
 class SimpleCritic(ParameterGroup):
@@ -18,11 +19,11 @@ class SimpleCritic(ParameterGroup):
         # only one reward
         self._dim_output = 1
 
-        SIZE_H1 = 10 * n
-        SIZE_H2 = 10 * n
-        SIZE_H3 = 10 * n
+        SIZE_H1 = 5 * n
+        SIZE_H2 = 5 * n
+        SIZE_H3 = 5 * n
 
-        std_dev = 1
+        std_dev = 1.0
         '''Initialize net layers'''
         self._l1 = Linear(self._dim_input, SIZE_H1, std_dev)
         self._l2 = Linear(SIZE_H1, SIZE_H2, std_dev)
@@ -35,7 +36,7 @@ class SimpleCritic(ParameterGroup):
         super(SimpleCritic, self).__init__(param_dict)
 
     def forward(self, s_h, a_h):
-        x = torch.cat((s_h, a_h), dim=-1)
+        x = torch.cat((s_h, a_h), 1)
         x = x.view(x.size(0), -1)
         self._l1_out = F.relu(self._l1(x))
         self._l2_out = F.relu(self._l2(self._l1_out))
@@ -45,3 +46,5 @@ class SimpleCritic(ParameterGroup):
 
         return self._out, self._out_log_dev
 
+    def __call__(self,s_h,a_h):
+        return self.forward(s_h,a_h)

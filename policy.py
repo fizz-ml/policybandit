@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-SIZE_H1 = 50
-SIZE_H2 = 100
-SIZE_H3 = 60
+SIZE_H1 = 5
+SIZE_H2 = 10
+SIZE_H3 = 6
 
 class Policy(torch.nn.Module):
     """
@@ -29,10 +29,11 @@ class Policy(torch.nn.Module):
 
     def forward(self,s_t):
         x = s_t
+        x = x.view(x.size(0), -1)
         self._l1_out = F.relu(self._l1(x))
         self._l2_out = F.relu(self._l2(self._l1_out))
         self._l3_out = F.relu(self._l3(self._l2_out))
         self._out = F.softmax(self._l4(self._l3_out))
 
-        return self._out, {}
+        return self._out
 

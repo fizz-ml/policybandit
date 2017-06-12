@@ -1,11 +1,14 @@
 from environment import GymEnvironment
-from ddpg_agent import DDPGAgent
 import numpy as np
 import sys
 import random
 import os
 import json
-import pdb
+from critic import SimpleCritic
+from policy import Policy
+from hallucinator import SimpleHallucinator
+from trainer import SimpleTrainer
+from policy_buffer import PolicyBuffer
 
 def main():
     # Get the path to the configs
@@ -16,87 +19,32 @@ def main():
     json_data = open(conf_path).read()
     conf = json.loads(json_data)
 
+    '''
     # Update the relative path
     conf["agent"]["actor_path"]         = os.path.join(model_path, conf["agent"]["actor_path"] )
     conf["agent"]["critic_path"]        = os.path.join(model_path, conf["agent"]["critic_path"] )
     conf["agent"]["hallucinator_path"]  = os.path.join(model_path, conf["agent"]["critic_path"] )
+    '''
 
     # Run the training algorithm
     run = Runner(conf['env'], conf['agent'])
     run.train(conf['train'])
-    run.test(conf['test'])
+    #run.test(conf['test'])
 
 class Runner:
     def __init__(self, env_config, agent_config):
+        self.n = 10
+        self.noise_dim = 2
         self.env = GymEnvironment(name = env_config["name"])
-        self.agent = DDPGAgent(action_size = self.env.action_size[0],
-                                state_size = self.env.obs_size[0],
-                                **agent_config)
+        self.critic = SimpleCritic(self.n, self.env.obs_size, self.env.action_size)
+        self.hallucinator = SimpleHallucinator(self.n, self.env.obs_size, self.noise_dim)
+        self.policy_buffer = PolicyBuffer()
+        self.policy_c = Policy
+        self.trainer = SimpleTrainer(self.env, self.critic, self.hallucinator, self.policy_buffer, self.policy_c, self.noise_dim)
 
     def train(self, train_config, fill_replay = True):
-        '''
-        Traijs the policy, the critic and the hallucinator.
-        '''
-        # Run on per episode basis
-        ma_reward = 0
-
-        train_episodes = train_config['episodes']
-
-        # Train for some number of episodes
-        for step in range(train_episodes):
-            # Start a new episode
-            self.env.new_episode()
-            episode_reward = 0
-            episode_done = False
-
-            # Keep going until the episode is over
-            while(!episode_done):
-                # Get observation from environment
-                cur_obs = self.env.cur_obs
-                # Query agent for action to be performed
-                cur_action = np.squeeze(self.agent.get_next_action(cur_obs), axis=0)
-
-                '''
-                if (any(np.isnan(cur_obs))):
-                    pdb.set_trace()
-                '''
-
-                # Step the simulation
-                next_state, reward, done = self.env.next_obs(cur_action, render = True)
-
-                # Aggregate the reward
-                episode_reward += reward
-
-                # Update wether we are done or not
-                episode_done = episode_done or done
-
-            # Once we are done with the episode, store (policy, reward)
-            self.policy_buffer.store_tuple(self.agent.get_weights(), episode_reward)
-
-            # Now train critic and hallucinator
-
-            # Now optimize the policy using the critic, hallucinator
-
-            '''
-            ma_reward = ma_reward*0.99 + reward*0.01
-            if(step % 1000):
-                print(cur_obs, ' ', cur_action, 'Reward:', ma_reward)
-                print('Eps',self.agent.epsilon)
-            '''
-
-    def test(self, test_config):
-        '''
-        Simply runs the trained policy in the environment.
-        '''
-        test_steps = test_config['steps']
-
-        temp_reward = 0
-        temp_done = False
-        for step in range(start_train):
-            cur_obs = self.env.cur_obs
-            cur_obs = np.concatenate((cur_obs,np.array([temp_reward])))
-            cur_action = self.agent.get_next_action(cur_obs)
-            next_state, reward, done = self.env.next_obs(cur_action, render = True)
+        train_steps = train_config['steps']
+        self.trainer.train(train_steps, 2, 2)
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ from torch.autograd import Variable
 from torch.optim import Optimizer
 import math
 import matplotlib.pyplot as plt
+import numpy as np
 
 class HMCSampler(object):
     """updates the model parameters by preforming n hcmc updates
@@ -34,7 +35,7 @@ class HMCSampler(object):
         loss = 0
         for closure in closure_gen():
             loss += closure()
-            loss.backward()
+            loss.backward(retain_variables=True)
         g_list = list(map((lambda x: x.grad.data),p_list))
         return g_list,loss
 
@@ -67,6 +68,7 @@ class ParameterGroup:
         prior = 0
         for value in self.parameters.values():
             prior += value.get_prior_llh()
+        return prior
 
     def parameter_list(self):
         p_list = []
@@ -88,8 +90,10 @@ class ParameterGroup:
 class TensorParameter:
     def __init__(self,shape,std_dev,zeros = True):
         if zeros:
+            print(type(shape), type(std_dev), type(zeros))
+            print(shape)
             self.parameter = Variable(t.FloatTensor(np.random.normal(size=shape,
-                scale=std_dev/100)),requires_grad = True)
+                scale=std_dev/100.)),requires_grad = True)
         else:
             self.parameter = Variable(t.FloatTensor(np.random.normal(size=shape,
                 scale=std_dev)),requires_grad = True)
@@ -108,14 +112,10 @@ class TensorParameter:
     def cpu(self):
         self.parameter = self.parameter.cpu()
 
-    def get_prior_llh(self,dims):
+    def get_prior_llh(self):
         prob = -t.log(self.parameter)**2 \
-                /(2*self.var)-t.log(2*math.pi)-t.log(self.var)/2
-        for dim in dims:
-            prob = sum(prob,dim)
-
-        return t.squeeze(prob)
-
+                /(2*self.var)
+        return t.sum(prob)
 
 def test_hmc():
     p = Variable(t.FloatTensor([0]),requires_grad = True)

@@ -3,7 +3,7 @@ class PolicyBuffer:
     Experience Replay stores action, state, reward and terminal signal
     for each time step.
     """
-    def __init__(self, capacity = None):
+    def __init__(self, capacity = 9001):
         """ Creates a policy bueffer of certain capacity.
             Acts like a circular buffer.
         Args:
@@ -19,16 +19,16 @@ class PolicyBuffer:
         ''' Adds a new policy tuple
         '''
         pol_tuple = (policy_dict, ave_reward)
-        if self.length < self.capacity or not capacity:
+        if self.length < self.capacity:
             self._buffer.append( pol_tuple )
         else:
             self._buffer[self.current_index] = pol_tuple
-        self._icrement_index()
+        self._increment_index()
 
     def peek(self):
         ''' Returns the most recent policy tuple
         '''
-        return self._buffer[self.current_index]
+        return self._buffer[self.current_index-1]
 
     def _increment_index(self):
         if self.capacity:

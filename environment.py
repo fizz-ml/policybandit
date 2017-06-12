@@ -42,7 +42,7 @@ class GymEnvironment(Environment):
             monitor:        If True, wraps the environment with the openAI gym monitor.
         """
         self.env = gym.make(name)
-        self.env = wrappers.Monitor(self.env, './results/cart_pole_1')
+        #self.env = wrappers.Monitor(self.env, './results/cart_pole_1')
         self._cur_obs = None
 
     def next_obs(self, cur_action, render = False):
@@ -56,14 +56,14 @@ class GymEnvironment(Environment):
             reward:         Reward received from the step.
             done:           Bool signaling terminal step.
         """
+        print('ACITON', cur_action)
         self.cur_obs, self.cur_reward, self.done, _ = self.env.step(cur_action)
+        print('another one', self.cur_obs, self.cur_obs.shape)
         if (not all(np.isfinite(self.cur_obs))) and (not all(np.isfinite(self.cur_reward))):
             import pdb
             pdb.set_trace()
         if render:
             self.env.render()
-        if self.done:
-            self.new_episode()
         return self.cur_obs, self.cur_reward, self.done
 
     def new_episode(self):
@@ -77,11 +77,11 @@ class GymEnvironment(Environment):
 
     @property
     def action_size(self):
-        return self.env.action_space.shape
+        return self.env.action_space.shape[0]
 
     @property
     def obs_size(self):
-        return self.env.observation_space.shape
+        return self.env.observation_space.shape[0]
 
     @property
     def cur_obs(self):
