@@ -56,9 +56,7 @@ class GymEnvironment(Environment):
             reward:         Reward received from the step.
             done:           Bool signaling terminal step.
         """
-        print('ACITON', cur_action)
         self.cur_obs, self.cur_reward, self.done, _ = self.env.step(cur_action)
-        print('another one', self.cur_obs, self.cur_obs.shape)
         if (not all(np.isfinite(self.cur_obs))) and (not all(np.isfinite(self.cur_reward))):
             import pdb
             pdb.set_trace()
@@ -72,7 +70,7 @@ class GymEnvironment(Environment):
             obs:    Initial observation of the new episode.
         """
         self.cur_obs = self.env.reset()
-        self.env.render()
+        #self.env.render()
         return self.cur_obs
 
     @property

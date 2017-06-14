@@ -44,7 +44,7 @@ class Runner:
 
     def train(self, train_config, fill_replay = True):
         train_steps = train_config['steps']
-        self.trainer.train(train_steps, 2, 2)
+        self.trainer.train(train_steps, 5, 10000)
 
 if __name__ == "__main__":
     main()

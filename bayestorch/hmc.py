@@ -11,7 +11,7 @@ class HMCSampler(object):
 
     (larger description)
     """
-    def __init__(self,parameters,epsilon=0.01,n=100):
+    def __init__(self,parameters,epsilon=0.0001,n=100):
         self.epsilon = epsilon
         self.n = n
         self.p_list = parameters
@@ -30,13 +30,20 @@ class HMCSampler(object):
                 param.grad.data.zero_()
 
     def data_pass(self,closure_gen):
-        p_list = self.p_list
         self.zero_grad()
         loss = 0
         for closure in closure_gen():
-            loss += closure()
+            loss = closure()
             loss.backward(retain_variables=True)
-        g_list = list(map((lambda x: x.grad.data),p_list))
+        p_list = self.p_list
+        def f(x):
+            if hasattr(x.grad,"data"):
+                return x.grad.data
+            else:
+                Warning("gradient not set")
+                return 0
+
+        g_list = [f(x) for x in p_list]
         return g_list,loss
 
     def step(self,closure_gen):
@@ -90,8 +97,6 @@ class ParameterGroup:
 class TensorParameter:
     def __init__(self,shape,std_dev,zeros = True):
         if zeros:
-            print(type(shape), type(std_dev), type(zeros))
-            print(shape)
             self.parameter = Variable(t.FloatTensor(np.random.normal(size=shape,
                 scale=std_dev/100.)),requires_grad = True)
         else:
@@ -113,7 +118,7 @@ class TensorParameter:
         self.parameter = self.parameter.cpu()
 
     def get_prior_llh(self):
-        prob = -t.log(self.parameter)**2 \
+        prob = -(self.parameter)**2 \
                 /(2*self.var)
         return t.sum(prob)
 

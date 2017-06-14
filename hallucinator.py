@@ -39,10 +39,10 @@ class SimpleHallucinator(ParameterGroup):
     def forward(self, noise):
         ''' noise must be a batch_size x noise_dim Variable
         '''
-        x = noise
-        self._l1_out = F.relu(self._l1(x))
-        self._l2_out = F.relu(self._l2(self._l1_out))
-        self._l3_out = F.relu(self._l3(self._l2_out))
+        x = noise*0
+        self._l1_out = F.elu(self._l1(x))
+        self._l2_out = F.elu(self._l2(self._l1_out))
+        self._l3_out = F.elu(self._l3(self._l2_out))
         self._out = self._l4(self._l3_out)
         self._out = self._out.view(noise.size(0), self.n, self._s_size)
         return self._out
